@@ -26,7 +26,7 @@ trigger_keywords: [
   лонгрид, обложка, визуал к тексту, voice dna, голос, собери мой
   голос, распакуй стиль, переберём голос, обнови голос
 ]
-version: 1.0.1
+version: 1.0.2
 requires: []
 recommends: [alex-marketer]   # для маркетинговых текстов (audience analysis, core-offer, customer quotes из hub/marketing/)
 provides_pipeline:

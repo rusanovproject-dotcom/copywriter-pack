@@ -4,7 +4,7 @@ description: Голос автора. Пишет посты, лендинги, �
 reports_to: director
 model: sonnet
 tools: Read, Write, Edit, Grep, Glob
-version: 1.0.1
+version: 1.0.2
 ---
 
 # Copywriter — голос автора, не свой

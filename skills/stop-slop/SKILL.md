@@ -1,6 +1,13 @@
 ---
 name: stop-slop
-description: Remove AI writing patterns from prose. Use when drafting, editing, or reviewing text to eliminate predictable AI tells. Russian em-dash exception built-in.
+description: |
+  Антидетектор AI-паттернов для русских и двуязычных текстов. Сканирует
+  текст по 6 категориям (филлеры, слоп-лексика, формульные структуры,
+  синтаксическое однообразие, эмоциональная стерильность, Never Say),
+  даёт скоринг 5×10, переписывает чтобы текст звучал живым человеком.
+  Хук и CTA не трогает. Em-dash `—` в русском не трогает (мандатная
+  типография).
+
 triggers:
   - убери слоп
   - почисть AI
@@ -8,70 +15,129 @@ triggers:
   - убери AI-паттерны
   - чистка AI
   - прогон через стоп-слоп
+  - звучит как AI
+  - слишком искусственно
+  - антидетект
   - stop slop
   - /stop-slop
+
+modes:
+  - "/stop-slop"            # полный прогон (детекция + переписывание)
+  - "/stop-slop --score"    # только оценка 5×10, без правок
+  - "/stop-slop --check"    # показать найденные паттерны без переписи
+  - "/stop-slop --aggressive"  # макс переработка (для текстов с очень высоким AI-score)
+
 metadata:
-  author: Hardik Pandya (https://hvpandya.com)
+  origin: "Адаптация под русский на базе stop-slop Hardik Pandya (https://hvpandya.com), MIT"
   license: MIT
+  language: ru-primary (RU + EN паттерны)
 ---
 
-# Stop Slop
+# Stop Slop — антидетектор AI-паттернов
 
-Eliminate predictable AI writing patterns from prose.
+Финальный шаг перед публикацией. Находит AI-слоп и переписывает текст так, чтобы он звучал как написанный живым человеком с характером и голосом.
 
-## Core Rules
+> **Принцип:** убираем слоп — оставляем огонь. Эмоция, мат в точке кипения, экспрессия, разговорные обрывы — это **не слоп**. Если после прогона текст стал «кастрированным» — верни энергию обратно. Чистый ≠ мёртвый.
 
-1. **Cut filler phrases.** Remove throat-clearing openers, emphasis crutches, and all adverbs. See [references/phrases.md](references/phrases.md).
+## Алгоритм
 
-2. **Break formulaic structures.** Avoid binary contrasts, negative listings, dramatic fragmentation, rhetorical setups, false agency. See [references/structures.md](references/structures.md).
+### Phase 1 — ДЕТЕКЦИЯ
 
-3. **Use active voice.** Every sentence needs a human subject doing something. No passive constructions. No inanimate objects performing human actions ("the complaint becomes a fix").
+1. **Контекст** (если есть в офисе):
+   - `voice.md` — личный голос автора (его словечки, стоп-фразы, регистр)
+   - `failures.md` — паттерны ошибок которые уже накопились
+   - `overrides.md` — клиентские правила (мат / без мата, запрещённые слова)
 
-4. **Be specific.** No vague declaratives ("The reasons are structural"). Name the specific thing. No lazy extremes ("every," "always," "never") doing vague work.
+2. **Сканирование по 6 категориям** — см. `references/ai-patterns.md`:
+   - **Филлеры** — пустые фразы, водянистые переходы
+   - **Слоп-лексика** — «инновационный», «синергия», «journey», «delve» и т.п.
+   - **Формульные структуры** — «Не X. Не Y. Z.», intro→body→conclusion
+   - **Синтаксическое однообразие** — все предложения одной длины, одинаковые начала
+   - **Эмоциональная стерильность** — нет мнений, колебаний, юмора
+   - **Never Say** — слова из `voice.md` или `overrides.md` запретного списка
 
-5. **Put the reader in the room.** No narrator-from-a-distance voice. "You" beats "People." Specifics beat abstractions.
+3. **Скоринг 1-10 по 5 параметрам:**
 
-6. **Vary rhythm.** Mix sentence lengths. Two items beat three. End paragraphs differently. No em dashes — **EXCEPT** in Russian text (em-dash `—` is mandatory in Russian typography, never `--`).
+| Параметр | Вопрос |
+|----------|--------|
+| Directness | Утверждает или объявляет «сейчас расскажу»? |
+| Rhythm | Длины предложений варьируются или метроном? |
+| Trust | Уважает интеллект читателя или разжёвывает? |
+| Authenticity | Звучит как живой человек? |
+| Density | Можно ли что-то вырезать без потери смысла? |
 
-7. **Trust readers.** State facts directly. Skip softening, justification, hand-holding.
+**Порог:** средний ≥7 = PASS. Меньше — переписывать.
 
-8. **Cut quotables.** If it sounds like a pull-quote, rewrite it.
+### Phase 2 — ПЕРЕПИСЫВАНИЕ
 
-## Quick Checks
+Применяй техники из `references/rewrite-techniques.md`:
 
-Before delivering prose:
+- **Непредсказуемость лексики** — очевидное слово → неожиданное но точное. «важный» → «несущий», «трудный» → «в гору». Конкретика вместо абстракции.
+- **Burstiness** — чередуй короткие (3-5 слов) и длинные (25+ слов) предложения. Короткое после длинного = удар. Тире, скобки, обрывы.
+- **Эмоциональный интеллект** — личные маркеры («думаю», «возможно», «не уверен»), колебания, риторические вопросы, юмор/сарказм где уместно.
+- **Нарушение шаблонов** — начни с середины мысли, делай отступления, абзацы разной длины (1 строка / 6 строк / 2). Финал не резюмирует.
+- **Контекстуальная аутентичность** — конкретные детали, личные метафоры, разговорные переходы.
 
-- Any adverbs? Kill them.
-- Any passive voice? Find the actor, make them the subject.
-- Inanimate thing doing a human verb ("the decision emerges")? Name the person.
-- Sentence starts with a Wh- word? Restructure it.
-- Any "here's what/this/that" throat-clearing? Cut to the point.
-- Any "not X, it's Y" contrasts? State Y directly.
-- Three consecutive sentences match length? Break one.
-- Paragraph ends with punchy one-liner? Vary it.
-- Em-dash anywhere in **English** text? Remove it. (In Russian — em-dash is mandatory typography, leave it.)
-- Vague declarative ("The implications are significant")? Name the specific implication.
-- Narrator-from-a-distance ("Nobody designed this")? Put the reader in the scene.
-- Meta-joiners ("The rest of this essay...")? Delete. Let the essay move.
+### Phase 3 — ФИНАЛ
 
-## Scoring
+- Пересканируй переписанный текст по Phase 1
+- **Проверь сохранность:**
+  - [ ] Хук (первая строка/абзац) **НЕ ИЗМЕНЁН**
+  - [ ] CTA (последний абзац) **НЕ ИЗМЕНЁН**
+  - [ ] Word count изменился не более чем на ±5%
+  - [ ] Ключевая мысль и факты на месте
+- **Контрольный тест:** есть 2-3 слегка неровные но естественные фразы
+- Вердикт: **PASS** (≥7 средний по всем параметрам) или **RETRY**
 
-Rate 1-10 on each dimension:
+## Правила в пайплайне
 
-| Dimension | Question |
-|-----------|----------|
-| Directness | Statements or announcements? |
-| Rhythm | Varied or metronomic? |
-| Trust | Respects reader intelligence? |
-| Authenticity | Sounds human? |
-| Density | Anything cuttable? |
+- **Хук неприкосновенен** — не трогать первую строку/абзац
+- **CTA неприкосновенен** — не трогать последний абзац с CTA
+- **Em-dash `—` в русском не трогать.** Это мандатная типография русского языка, не AI-tell. Проверяй: текст русский? — `—` оставляешь. Текст английский? — em-dash убираешь (для англ. — AI-tell).
+- **Word count:** допустимое отклонение ±5% от входа
+- **Огонь оставлять** — мат, восклицания, экспрессия, разговорные обрывы это голос автора, не слоп
 
-Below 35/50: revise.
+## Output
 
-## Examples
+```markdown
+---
+stage: stop-slop-pass
+hook: "[первая строка — НЕ ИЗМЕНЕНА]"
+word_count: N
+score: {directness: N, rhythm: N, trust: N, authenticity: N, density: N, avg: N}
+verdict: PASS / RETRY
+---
 
-See [references/examples.md](references/examples.md) for before/after transformations.
+[переписанный текст]
 
-## License
+---
+## Что поменялось
+- [N] замен слоп-лексики
+- [M] структурных правок
+- Найденные паттерны: [список]
+```
 
-MIT
+## Quick Checks (быстрый чеклист перед отдачей)
+
+- [ ] Никаких «давайте разберёмся», «на самом деле», «в современном мире», «дело в том что»
+- [ ] Никаких «инновационный», «уникальный», «комплексный», «синергия», «парадигма»
+- [ ] Никаких «journey», «delve», «unleash», «game-changing», «leverage» (если текст частично EN)
+- [ ] Не три предложения подряд одной длины
+- [ ] Минимум 3 разных типа начал на 10 предложений
+- [ ] Минимум 1 вопрос/обрыв на 300 слов
+- [ ] Минимум 1 личный маркер (мнение/сомнение/юмор) на 300 слов
+- [ ] Не больше 1 параллелизма «Не X. Не Y. Z.» на пост
+- [ ] Хук и CTA не тронуты
+- [ ] Em-dash в русском оставлен, в английском вырезан
+
+## Файлы-справочники
+
+- `references/ai-patterns.md` — 6 категорий AI-паттернов (RU + EN), что искать и убивать
+- `references/rewrite-techniques.md` — техники переписывания AI → живой человек, чеклист
+- `references/phrases.md` — англоязычный supplement (фразы-филлеры на EN, для двуязычных текстов)
+- `references/structures.md` — англоязычный supplement (формульные структуры на EN)
+- `references/examples.md` — before/after примеры на EN
+
+## Атрибуция
+
+Базовая методология — Hardik Pandya, [stop-slop](https://hvpandya.com), MIT license. Адаптировано под русский язык и расширено двуязычными паттернами в рамках пакета copywriter для AI-офисов учеников.
