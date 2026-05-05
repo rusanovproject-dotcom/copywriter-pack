@@ -26,7 +26,7 @@ trigger_keywords: [
   лонгрид, обложка, визуал к тексту, voice dna, голос, собери мой
   голос, распакуй стиль, переберём голос, обнови голос
 ]
-version: 1.0.3
+version: 1.0.4
 requires: []
 recommends: [alex-marketer]   # для маркетинговых текстов (audience analysis, core-offer, customer quotes из hub/marketing/)
 provides_pipeline:
@@ -90,6 +90,9 @@ files:
   - src: overrides.md
     dest: office/agents/copywriter/overrides.md
     preserve_if_exists: true
+  - src: audience-map.md.template
+    dest: office/agents/copywriter/audience-map.md
+    preserve_if_exists: true   # карта ЦА: пустая при первой установке, копирайтер заполнит сам при первом маркетинговом запросе
 
   # Скиллы — ставятся в .claude/skills/ офиса
   - src: skills/
@@ -174,9 +177,12 @@ updates:
 
 Свой регистр под нишу можно будет собрать в версии 1.1.0 (см. CHANGELOG → Roadmap). Пока хватит стартовых пяти.
 
-Если работаешь с маркетинговыми текстами и в офисе уже есть
-Маркетолог (Алекс) — копирайтер сам найдёт его файлы (анализ ЦА,
-оффер, цитаты клиентов) и подтвердит что использует их.
+Если работаешь с маркетинговыми текстами — **копирайтер один раз
+просканирует офис** на файлы ЦА / цитат / оффера, покажет тебе что
+нашёл, попросит подтвердить и **запомнит пути в `audience-map.md`**.
+Дальше каждый раз молча читает оттуда — не спрашивает «где ЦА» по
+второму кругу. Если поменялось — скажи «пересобери карту аудитории»,
+пересканирует.
 
 Сейчас — собирай голос. Это база для всего остального.
 ```
@@ -214,6 +220,10 @@ for f in memory failures overrides; do
   [ -f "office/agents/copywriter/$f.md" ] || \
     cp "_agent-packs/copywriter/$f.md" "office/agents/copywriter/$f.md"
 done
+
+# 5b. Карта ЦА (пустая при первой установке, копирайтер заполнит сам)
+[ -f "office/agents/copywriter/audience-map.md" ] || \
+  cp "_agent-packs/copywriter/audience-map.md.template" "office/agents/copywriter/audience-map.md"
 
 # 6. Скиллы (рекурсивно)
 cp -R _agent-packs/copywriter/skills/* .claude/skills/
