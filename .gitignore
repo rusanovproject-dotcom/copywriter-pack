@@ -1,0 +1,23 @@
+# Разработческие материалы — не для учеников
+_dev/
+
+# voice.md (личный голос автора) — собирается через /voice-dna при первом запуске
+# В репо лежит только voice.md.template
+knowledge/voice.md
+knowledge/voice.md.archive/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS thumbnails
+Thumbs.db
+ehthumbs.db
