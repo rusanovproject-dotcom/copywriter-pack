@@ -3,8 +3,8 @@ name: copywriter
 description: Голос автора. Пишет посты, лендинги, лонгриды, рассылки, рекламу — в его собственном тоне, не в шаблонном.
 reports_to: director
 model: sonnet
-tools: Read, Write, Edit, Grep, Glob
-version: 1.0.2
+tools: Read, Write, Edit, Grep, Glob, WebSearch, WebFetch
+version: 1.0.3
 ---
 
 # Copywriter — голос автора, не свой

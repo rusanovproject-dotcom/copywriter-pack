@@ -26,7 +26,7 @@ trigger_keywords: [
   лонгрид, обложка, визуал к тексту, voice dna, голос, собери мой
   голос, распакуй стиль, переберём голос, обнови голос
 ]
-version: 1.0.2
+version: 1.0.3
 requires: []
 recommends: [alex-marketer]   # для маркетинговых текстов (audience analysis, core-offer, customer quotes из hub/marketing/)
 provides_pipeline:
@@ -176,7 +176,57 @@ updates:
 
 Если работаешь с маркетинговыми текстами и в офисе уже есть
 Маркетолог (Алекс) — копирайтер сам найдёт его файлы (анализ ЦА,
-оффер, цитаты клиентов) в `hub/marketing/` и подтвердит что использует их.
+оффер, цитаты клиентов) и подтвердит что использует их.
 
 Сейчас — собирай голос. Это база для всего остального.
 ```
+
+---
+
+## Manual install (если в офисе нет команды `/install-agent`)
+
+Если ты не используешь `client-office-template` или скилл `/install-agent` не установлен — пакет можно поставить руками. Терминал, из корня твоего AI-офиса:
+
+```bash
+# 1. Клонировать пак (если ещё не клонировал)
+git clone https://github.com/rusanovproject-dotcom/copywriter-pack.git _agent-packs/copywriter
+
+# 2. Создать папку агента
+mkdir -p office/agents/copywriter/knowledge
+mkdir -p .claude/skills
+
+# 3. Скопировать файлы агента
+cp _agent-packs/copywriter/CLAUDE.md         office/agents/copywriter/CLAUDE.md
+cp _agent-packs/copywriter/core.md           office/agents/copywriter/core.md
+cp _agent-packs/copywriter/knowledge/INDEX.md           office/agents/copywriter/knowledge/INDEX.md
+cp _agent-packs/copywriter/knowledge/craft.md           office/agents/copywriter/knowledge/craft.md
+cp _agent-packs/copywriter/knowledge/anti-patterns.md   office/agents/copywriter/knowledge/anti-patterns.md
+cp _agent-packs/copywriter/knowledge/voice.md.template  office/agents/copywriter/knowledge/voice.md.template
+
+# 4. Стартовые регистры (5 файлов) — копировать только если их ещё нет
+for f in voice-universal voice-provocative voice-expert voice-longread voice-storyteller; do
+  [ -f "office/agents/copywriter/knowledge/$f.md" ] || \
+    cp "_agent-packs/copywriter/knowledge/$f.md" "office/agents/copywriter/knowledge/$f.md"
+done
+
+# 5. Шаблоны памяти — копировать только если их ещё нет
+for f in memory failures overrides; do
+  [ -f "office/agents/copywriter/$f.md" ] || \
+    cp "_agent-packs/copywriter/$f.md" "office/agents/copywriter/$f.md"
+done
+
+# 6. Скиллы (рекурсивно)
+cp -R _agent-packs/copywriter/skills/* .claude/skills/
+```
+
+После копирования — добавь в корневой `CLAUDE.md` своего офиса строку:
+
+```
+@office/agents/copywriter/core.md
+```
+
+В секцию обязательных layered include (где уже подключены остальные агенты).
+
+И в `office/AGENTS.md` руками добавь строку про Копирайтера в активной команде (см. секцию `updates → office/AGENTS.md` в YAML выше).
+
+После — `/voice-dna` для сборки голоса. Дальше пиши.
