@@ -1,8 +1,8 @@
 # Разработческие материалы — не для учеников
 _dev/
 
-# voice.md (личный голос автора) — собирается через /voice-dna при первом запуске
-# В репо лежит только voice.md.template
+# voice.md (личный голос автора) — собирается скиллом voice-learning при первом запуске
+# В репо лежит только templates/voice.md.template
 knowledge/voice.md
 knowledge/voice.md.archive/
 

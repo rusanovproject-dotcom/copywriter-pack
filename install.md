@@ -1,6 +1,7 @@
 # Copywriter — install manifest
 
 Машиночитаемые метаданные для установки пака через скилл `/install-agent copywriter`.
+Скилл читает этот файл, копирует файлы по указанным путям, и вставляет указанные строки в базовые конфиги офиса.
 
 ---
 
@@ -11,31 +12,38 @@ agent_id: copywriter
 agent_name_human: Копирайтер
 agent_name_in_chat: Копирайтер
 short_role: |
-  Пишет посты, треды, лендинги, лонгриды, рассылки и рекламу
-  в голосе автора (не в шаблонном AI-тоне). Перед первым текстом
-  собирает голос через /voice-dna из 5-15 текстов автора. Без
-  voice.md писать отказывается — иначе слоп.
+  Голос автора — тексты, которые нельзя вставить в чужой канал: посты ТГ,
+  треды Threads/X, статьи/лонгриды/presell, рассылки, тексты лендингов
+  (слова — не вёрстка). Перед первым текстом собирает голос через
+  voice-learning из 5-20 текстов автора. Без собранного голоса — писать
+  отказывается. Каждый текст проходит критик-гейт A-F вслух с цитатами
+  (порог отдачи ≥ B) и заканчивается развилкой: почистить слоп / 5 вариантов
+  докрутки / сохранить как готовое.
 trigger_keywords: [
   копирайтер, copywriter, напиши пост, пост в тг, пост телеграм,
-  текст для канала, напиши текст, продающий текст, креатив,
-  реклама, рекламный текст, баннер, таргет, лендинг, посадочная,
-  посадочная страница, лонгрид, статья, presell, прогрев,
-  продающая статья, рассылка, email, тред, threads, X пост,
-  цепочка постов, контент-план, батч, N постов, фабрика контента,
-  проверь текст, проверь виральность, ревью лонгрида, докрути
-  лонгрид, обложка, визуал к тексту, voice dna, голос, собери мой
-  голос, распакуй стиль, переберём голос, обнови голос
+  текст для канала, напиши текст, продающий текст, лендинг, посадочная,
+  лонгрид, статья, presell, прогрев, продающая статья, рассылка, тред,
+  threads, X пост, цепочка постов, контент-план, докрути, 5 вариантов,
+  другой угол, убери AI-язык, режь слоп, звучит как ИИ, собери мой голос,
+  voice dna, распакуй стиль, обнови голос, tone of voice
 ]
-version: 1.0.5
+version: 2.0.0
 requires: []
-recommends: [alex-marketer]   # для маркетинговых текстов (audience analysis, core-offer, customer quotes из hub/marketing/)
+optional_mcp_servers: []   # см. секцию "MCP-подключения (опционально)" ниже — без сервисных пакетов, обычные MCP-серверы под текст/Telegram
 provides_pipeline:
-  - voice-dna       # сборка живого голоса автора (база перед любыми текстами)
-  - stop-slop       # чистка AI-паттернов из черновика после написания
-  - style-switch    # переписка в другом регистре (сканирует voice-*.md, предлагает 2-3, может несколько сразу)
-  - smart-rewrite   # докрутка по 5 линзам (аватар / жирность / глубина / обогащение / сегментация)
-  - angle-shift     # пересборка с нуля под одну ключевую идею (переворот / новый механизм / убеждение)
+  - voice-learning   # сборка/обновление голоса из корпуса (база перед любыми текстами)
+  - tg-post          # первый драфт поста для Telegram
+  - threads          # первый драфт треда для Threads/X
+  - article          # статьи, лонгриды, presell + ревью-режим
+  - post-refine      # 5 вариантов по матрице осей + докрутка по смыслам + смена угла
+  - anti-slop        # 3-слойная чистка AI-языка, финальный гейт перед выдачей
 ```
+
+**Что нового в 2.0.0** (пересборка по модели «идеального дизайнера»):
+- Единый источник правды `core.md` + критик-гейт A-F вслух с цитатами (было — свободный self-check списком)
+- 6 скиллов вместо 5 регистров голоса: жанровые (`tg-post` / `threads` / `article`) + `post-refine` (веер вариантов по матрице лид × LF8 × awareness) + `anti-slop` (3-слойная чистка) + `voice-learning` (сборка голоса из корпуса, а не готовые регистры-надстройки)
+- Голос — один дистиллированный `voice.md` (5 секций + камертон), не «личный голос + один из 5 стартовых регистров»
+- Знания разложены по назначению: `craft.md` (механика), `anti-slop-playbook.md` (что режем), `craft-rubric.md` (рубрика), `leads-matrix.md` (матрица вариантов), `voice-learning-method.md` (методология сборки голоса), `platforms.md` (цифры площадок), `arsenal.md` + `capabilities-map.md` (что умеет и чего не хватает)
 
 ---
 
@@ -45,85 +53,140 @@ provides_pipeline:
 
 ```yaml
 files:
-  # Корневой файл агента — точка сборки (@core.md @overrides.md)
-  - src: CLAUDE.md
-    dest: office/agents/copywriter/CLAUDE.md
-  # Ядро агента — роутинг, шаги, развилка после текста (обновляется при апдейте пакета)
   - src: core.md
     dest: office/agents/copywriter/core.md
-
-  # Universal knowledge core — обновляется при апдейте пакета
-  - src: knowledge/INDEX.md
-    dest: office/agents/copywriter/knowledge/INDEX.md
-  - src: knowledge/craft.md
-    dest: office/agents/copywriter/knowledge/craft.md
-  - src: knowledge/anti-patterns.md
-    dest: office/agents/copywriter/knowledge/anti-patterns.md
-  - src: knowledge/voice.md.template
-    dest: office/agents/copywriter/knowledge/voice.md.template
-
-  # Стартовые регистры-надстройки — копируются при первой установке,
-  # при апдейте сохраняем правки ученика (preserve_if_exists)
-  - src: knowledge/voice-universal.md
-    dest: office/agents/copywriter/knowledge/voice-universal.md
-    preserve_if_exists: true
-  - src: knowledge/voice-provocative.md
-    dest: office/agents/copywriter/knowledge/voice-provocative.md
-    preserve_if_exists: true
-  - src: knowledge/voice-expert.md
-    dest: office/agents/copywriter/knowledge/voice-expert.md
-    preserve_if_exists: true
-  - src: knowledge/voice-longread.md
-    dest: office/agents/copywriter/knowledge/voice-longread.md
-    preserve_if_exists: true
-  - src: knowledge/voice-storyteller.md
-    dest: office/agents/copywriter/knowledge/voice-storyteller.md
-    preserve_if_exists: true
-
-  # Шаблоны памяти / правил — копируются один раз, при апдейте сохраняются
+  - src: CLAUDE.md
+    dest: office/agents/copywriter/CLAUDE.md
+  - src: overrides.md
+    dest: office/agents/copywriter/overrides.md
+    preserve_if_exists: true   # не затирать если пользователь уже правил
   - src: memory.md
     dest: office/agents/copywriter/memory.md
     preserve_if_exists: true
   - src: failures.md
     dest: office/agents/copywriter/failures.md
     preserve_if_exists: true
-  - src: overrides.md
-    dest: office/agents/copywriter/overrides.md
+  - src: wins.md
+    dest: office/agents/copywriter/wins.md
     preserve_if_exists: true
-  - src: audience-map.md.template
-    dest: office/agents/copywriter/audience-map.md
-    preserve_if_exists: true   # карта ЦА: пустая при первой установке, копирайтер заполнит сам при первом маркетинговом запросе
-
-  # Скиллы — ставятся в .claude/skills/ офиса
+  - src: knowledge/
+    dest: office/agents/copywriter/knowledge/
   - src: skills/
     dest: .claude/skills/
-    recursive: true
+  - src: templates/
+    dest: office/agents/copywriter/templates/
 
-# voice.md (личный голос автора) НЕ копируется из пакета —
-# собирается через /voice-dna из 5-15 текстов автора при первом запуске.
+# knowledge/voice.md (личный голос автора) НЕ приходит в пакете —
+# собирается скиллом voice-learning из 5-20 текстов автора при первом запуске.
+# Каркас для ручной сборки — templates/voice.md.template.
 ```
 
 ---
 
-## Updates to existing files
+## Updates to `office/AGENTS.md`
+
+Вставить строку в таблицу «Установленные агенты» (после последней существующей строки):
+
+```markdown
+| **Копирайтер** | Пишет посты, треды, лонгриды, рассылки, тексты лендингов в голосе автора. Перед первым текстом собирает голос через `voice-learning`. Каждый текст — критик-гейт A-F вслух с цитатами (порог ≥ B), после — развилка «почистить слоп / 5 вариантов / готово». | *«напиши пост», «лендинг», «лонгрид», «5 вариантов», «собери мой голос»* |
+```
+
+---
+
+## Updates to root `CLAUDE.md`
+
+**НЕТ.** Корневой CLAUDE.md при установке НЕ редактируется (inline-модель @include упразднена). Агент подключается карточкой в `office/map-team.md` — см. блок «Карточка для карты команды» ниже.
+
+---
+
+## Updates to `office/agents/director/core.md`
+
+**1. В секцию «Команда офиса»** (список «Типовые роли») — добавить строку:
+
+```markdown
+- **Копирайтер** — пишет посты, треды, лонгриды, рассылки, тексты лендингов в голосе автора (не в шаблонном AI-тоне). Собирает голос через `voice-learning`, каждый текст проходит критик-гейт A-F перед выдачей
+```
+
+**2. В секцию «Роутинг»** — добавить строку в «Базовое правило маршрутизации»:
+
+```markdown
+- "напиши пост / лендинг / лонгрид / рассылку / тред" → **Копирайтер** (см. секцию "Копирайтер-триггер" ниже)
+```
+
+**3. Добавить секцию «Копирайтер-триггер»** (вставлять ПЕРЕД секцией «Output contract», если она отсутствует):
+
+```markdown
+## Копирайтер-триггер
+
+Когда пользователь просит текст — пост, лендинг, лонгрид, рассылку, тред — **не бросайся сам**.
+
+Действия:
+
+1. **Проверь голос.** Если `office/agents/copywriter/knowledge/voice.md` отсутствует или это пустой каркас — Копирайтер сначала соберёт голос через `voice-learning` (нужно 5-20 текстов автора). Предупреди пользователя одной строкой, если это первый запрос к нему.
+2. **Передай задачу Копирайтеру** с контекстом:
+   ```
+   to: Copywriter
+   task: [тип текста — пост / лендинг / лонгрид / тред / рассылка]
+   context: [для какого проекта/клиента, тема, фактура если есть]
+   voice: office/agents/copywriter/knowledge/voice.md (собран / не собран)
+   output: готовый текст с самооценкой A-F и развилкой
+   ```
+3. **Не переписывай сам.** Твоя задача — классифицировать и передать. Копирайтер сам ведёт пайплайн BRIEF→VOICE→DRAFT→CRITIQUE→VARIANTS→FIX→SHIP.
+```
+
+---
+
+## Updates to `office/agents/director/knowledge/routing-patterns.md`
+
+**1. В таблицу «Core-роутинг»** — добавить строки:
+
+```markdown
+| "напиши пост / лендинг / лонгрид / тред / рассылку" | **Копирайтер** | см. секцию "Копирайтер-триггер" в `core.md` — сначала проверить, собран ли голос |
+| "собери мой голос / voice dna / обнови голос" | **Копирайтер** → `voice-learning` | первый шаг для нового автора или пересборка голоса |
+```
+
+**2. В «Правила»** — добавить пункт:
+
+```markdown
+- **Голос — первый шаг работы Копирайтера.** Если `knowledge/voice.md` отсутствует — Копирайтер сначала запускает `voice-learning`, потом пишет первый текст.
+```
+
+**3. В «Параллельный / последовательный режим»** — добавить связки:
+
+```markdown
+- **Копирайтер → Дизайнер** — готовый текст лендинга/поста передаётся на визуал
+- **Копирайтер → ревью оффера** — продающий текст перед публикацией, если в офисе установлен агент/скилл для ревью офферов
+```
+
+---
+
+## First-task suggestion
+
+Типичная первая задача для пользователя после установки — сборка голоса:
 
 ```yaml
-updates:
-  - file: CLAUDE.md
-    section: "## Обязательный layered include при старте"
-    add_line: "@office/agents/copywriter/core.md"
-
-  - file: office/AGENTS.md
-    section: "## Активная команда"
-    add_row: |
-      | **Копирайтер** | Пишет посты, треды, лендинги, лонгриды, рассылки, рекламу в голосе автора. Перед первым текстом собирает голос через `/voice-dna` из 5-15 текстов. Без собранного голоса — писать отказывается. После каждой итерации — развилка 1-5: почистить от слопа / докрутить по смыслам / сменить угол / сменить регистр / сохранить. | *«напиши пост», «лендинг», «лонгрид», «креатив», «собери мой голос»* |
-
-  - file: office/agents/director/core.md
-    section: "## Роутинг"
-    add_rows: |
-      | соберём голос, voice dna, распакуй стиль, переберём голос, обнови голос | **Копирайтер** → `/voice-dna` (точка входа: первый запуск или пересборка голоса) |
-      | напиши пост, лендинг, лонгрид, креатив, рассылка, контент, серия постов, пост-история | **Копирайтер** (пишет напрямую по контексту voice.md + craft.md + anti-patterns.md + один из 5 регистров `voice-*.md`. Если voice.md ещё не собран — направь на `/voice-dna` сначала. После черновика — `/stop-slop` для чистки AI-паттернов) |
+first_task:
+  suggestion: "Собери мой голос"
+  why: "Без голоса любой текст будет звучать нейтральным AI-стилем — это первый и обязательный шаг, не опция."
+  skill: voice-learning
 ```
+
+---
+
+## MCP-подключения (опционально)
+
+Копирайтер работает «из коробки» на чек-листах — этого достаточно для полной
+работы всех 6 скиллов. Опционально можно усилить два места: анти-слоп-гейт
+(техническая стилометрия вместо только эвристик) и сборку голоса (авто-выгрузка
+истории Telegram-канала вместо ручного экспорта).
+
+Если решишь подключать — добавь нужные сервера в `.mcp.json` в корне офиса
+(создай файл, если его ещё нет) и перезапусти Claude Code. Конкретные пакеты
+меняются со временем — спроси у Клода «какие сейчас есть MCP-серверы для
+анализа текста / для Telegram» перед подключением, он подскажет актуальные.
+Без них копирайтер честно скажет «стилометрию не гонял» / «жду ручной экспорт
+истории канала» — качество текста от этого не проседает, работа просто идёт
+на глаз и руками вместо техгейта.
 
 ---
 
@@ -133,58 +196,25 @@ updates:
 ✅ Копирайтер в команде.
 
 Прежде чем он напишет первый текст — нужно собрать **твой голос**.
-Без него любой пост будет звучать «нейтральным AI-стилем», что = слоп.
+Без него любой текст будет звучать «нейтральным AI-стилем», что = слоп.
 
-Скажи **«собери мой голос»** или **«voice dna»** — копирайтер попросит
-5-15 твоих текстов (посты, длинные сообщения, расшифровки голосовых,
-кейсы), за один заход соберёт камертон в `voice.md` и зафиксирует
-твой стиль навсегда.
+Скажи **«собери мой голос»** — копирайтер попросит 5-20 твоих текстов
+(посты, длинные сообщения, расшифровки голосовых), разберёт их по 6 осям
+(ритм, лексикон, структура, анти-паттерны и т.д.) и соберёт дистиллированный
+файл голоса — не дамп примеров, а рабочий камертон.
 
 После голоса — пиши что нужно:
 - **«напиши пост про X»** — Telegram-пост
 - **«сделай лендинг для Y»** — текст посадочной
 - **«напиши лонгрид-прогрев»** — продающая статья
-- **«придумай 3 креатива для рекламы»** — рекламные тексты
-- **«серию из 10 постов про Z»** — батч с проверкой
-- **«пост-история про моего клиента»** — pre-sell в стиле сторител
+- **«тред про Z»** — цепочка для Threads/X
+- **«дай 5 вариантов»** — веер по матрице осей (не 5 перефразировок)
+- **«убери AI-язык»** — финальная чистка от слопа
 
-Копирайтер пишет напрямую — по твоему `voice.md` + универсальной
-механике текста + одному из 5 регистров под задачу. Никаких write-* скиллов
-не нужно — база покрывает все типы.
-
-**В пакете 5 скиллов:**
-- `/voice-dna` — собрать твой голос из 5-15 текстов (запускается первым)
-- `/stop-slop` — почистить черновик от AI-слопа
-- `/style-switch` — переписать в другом регистре (или нескольких сразу для сравнения)
-- `/smart-rewrite` — докрутить по 5 линзам (аватар / жирность / глубина / обогащение / сегментация)
-- `/angle-shift` — пересобрать с нуля под другую ключевую идею
-
-После каждого текста копирайтер сам предложит развилку 1-5:
-- **1** — `/stop-slop` (почистить)
-- **2** — `/smart-rewrite` (докрутить)
-- **3** — `/angle-shift` (другой угол)
-- **4** — `/style-switch` (другой регистр)
-- **5** — сохранить как готовое
-
-С порога у тебя **5 стартовых регистров** — общая упаковка тона,
-поверх твоего личного голоса:
-
-- **Универсальный** — практик в окопах (по умолчанию)
-- **Разговорный, без цензуры** — сторителл-эссе на больших темах
-- **Прожжённый эксперт** — разоблачение мифов, жёсткая позиция
-- **Экспертный лонгрид** — pre-sell статьи, методички 5-15К знаков
-- **Экспертный сторител** — pre-sell посты-истории про героя-зеркало
-
-Свой регистр под нишу можно будет собрать в версии 1.1.0 (см. CHANGELOG → Roadmap). Пока хватит стартовых пяти.
-
-Если работаешь с маркетинговыми текстами — копирайтер при первом
-запросе просканирует офис, **соберёт выжимку ЦА** прямо в проекте
-(`projects/<имя>/audience/audience-snapshot.md` ≈80 строк) и
-зарегистрирует проект в своём индексе `audience-map.md`. Дальше при
-каждом тексте читает только лёгкую выжимку — не загружает огромные
-файлы JTBD каждый раз. В полные файлы ныряет только для лендингов
-и лонгридов, и только в нужную секцию по якорю. Несколько проектов —
-у каждого своя выжимка, переключение «работаем над [имя проекта]».
+После каждого текста копирайтер сам печатает вслух самооценку A-F (с цитатами
+из текста, не абстрактно) и предлагает развилку: почистить слоп / докрутить
+5 вариантов / сохранить как готовое. Ниже оценки B он текст не отдаёт — сам
+докручивает ещё круг.
 
 Сейчас — собирай голос. Это база для всего остального.
 ```
@@ -196,49 +226,72 @@ updates:
 Если ты не используешь `client-office-template` или скилл `/install-agent` не установлен — пакет можно поставить руками. Терминал, из корня твоего AI-офиса:
 
 ```bash
-# 1. Клонировать пак (если ещё не клонировал)
-git clone https://github.com/rusanovproject-dotcom/copywriter-pack.git _agent-packs/copywriter
+# 1. Убедись что пак лежит в _agent-packs/copywriter (скопируй из своего
+#    источника дистрибуции паков, если его там ещё нет)
 
-# 2. Создать папку агента
+# 2. Создать папки агента
 mkdir -p office/agents/copywriter/knowledge
+mkdir -p office/agents/copywriter/templates
 mkdir -p .claude/skills
 
 # 3. Скопировать файлы агента
-cp _agent-packs/copywriter/CLAUDE.md         office/agents/copywriter/CLAUDE.md
-cp _agent-packs/copywriter/core.md           office/agents/copywriter/core.md
-cp _agent-packs/copywriter/knowledge/INDEX.md           office/agents/copywriter/knowledge/INDEX.md
-cp _agent-packs/copywriter/knowledge/craft.md           office/agents/copywriter/knowledge/craft.md
-cp _agent-packs/copywriter/knowledge/anti-patterns.md   office/agents/copywriter/knowledge/anti-patterns.md
-cp _agent-packs/copywriter/knowledge/voice.md.template  office/agents/copywriter/knowledge/voice.md.template
+cp _agent-packs/copywriter/CLAUDE.md   office/agents/copywriter/CLAUDE.md
+cp _agent-packs/copywriter/core.md     office/agents/copywriter/core.md
+cp -R _agent-packs/copywriter/knowledge/*  office/agents/copywriter/knowledge/
+cp -R _agent-packs/copywriter/templates/*  office/agents/copywriter/templates/
 
-# 4. Стартовые регистры (5 файлов) — копировать только если их ещё нет
-for f in voice-universal voice-provocative voice-expert voice-longread voice-storyteller; do
-  [ -f "office/agents/copywriter/knowledge/$f.md" ] || \
-    cp "_agent-packs/copywriter/knowledge/$f.md" "office/agents/copywriter/knowledge/$f.md"
-done
-
-# 5. Шаблоны памяти — копировать только если их ещё нет
-for f in memory failures overrides; do
+# 4. Шаблоны памяти — копировать только если их ещё нет
+for f in memory failures wins overrides; do
   [ -f "office/agents/copywriter/$f.md" ] || \
     cp "_agent-packs/copywriter/$f.md" "office/agents/copywriter/$f.md"
 done
 
-# 5b. Карта ЦА (пустая при первой установке, копирайтер заполнит сам)
-[ -f "office/agents/copywriter/audience-map.md" ] || \
-  cp "_agent-packs/copywriter/audience-map.md.template" "office/agents/copywriter/audience-map.md"
-
-# 6. Скиллы (рекурсивно)
+# 5. Скиллы (рекурсивно)
 cp -R _agent-packs/copywriter/skills/* .claude/skills/
 ```
 
-После копирования — добавь в корневой `CLAUDE.md` своего офиса строку:
+После копирования — добавь в `office/AGENTS.md` руками строку про Копирайтера
+(см. секцию `Updates to office/AGENTS.md` выше) и в `office/map-team.md`
+карточку (см. секцию ниже).
 
+После — скажи «собери мой голос» для сборки `voice.md`. Дальше пиши.
+
+---
+
+## Uninstall (future)
+
+Для будущей поддержки `/uninstall-agent copywriter`. Реверс установки:
+
+```yaml
+uninstall:
+  remove_folders:
+    - office/agents/copywriter/
+  remove_skill_folders:
+    - .claude/skills/tg-post/
+    - .claude/skills/threads/
+    - .claude/skills/article/
+    - .claude/skills/post-refine/
+    - .claude/skills/anti-slop/
+    - .claude/skills/voice-learning/
+  remove_lines_from:
+    - path: office/AGENTS.md
+      match: "**Копирайтер**"
+    - path: office/map-team.md
+      match: "**Копирайтер**"
+    - path: office/agents/director/core.md
+      match: "**Копирайтер** — пишет посты"
+    - path: office/agents/director/core.md
+      section: "## Копирайтер-триггер"   # удалить секцию целиком
+    - path: office/agents/director/knowledge/routing-patterns.md
+      match: "Копирайтер"
+  preserve:
+    - clients/   # пользовательский контент (карточки, включая voice.md клиентов), не трогать
 ```
-@office/agents/copywriter/core.md
-```
 
-В секцию обязательных layered include (где уже подключены остальные агенты).
+## Карточка для карты команды (office/map-team.md)
 
-И в `office/AGENTS.md` руками добавь строку про Копирайтера в активной команде (см. секцию `updates → office/AGENTS.md` в YAML выше).
+Скилл /install-agent добавляет этот блок карточкой в `office/map-team.md` (integration_model: card, дефолт):
 
-После — `/voice-dna` для сборки голоса. Дальше пиши.
+- **Копирайтер** — пишет посты, лендинги, лонгриды, рассылки и рекламу в голосе автора (сборка голоса — `voice-learning`).
+  TRIGGERS: «напиши пост» · «текст лендинга» · «лонгрид» · «рассылка» · «5 вариантов» · «собери мой голос».
+  Файл: `office/agents/copywriter/core.md`.
