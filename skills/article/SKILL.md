@@ -30,8 +30,12 @@ allowed-tools: Read, Write, Edit, Bash, Grep, Glob
 ## Вход
 
 1. Режим: писать или ревьюить. Из триггера обычно ясно; неясно — спроси одной строкой.
-2. Обязательный контекст по core-регламенту: voice.md → `knowledge/craft.md`
-   → `knowledge/anti-slop-playbook.md` → memory/failures. Без voice.md — стоп.
+2. Обязательный контекст по core-регламенту: голос-источник по резолюции core
+   (voice.md или пресет стиля; нет ни того ни другого → витрина
+   `knowledge/styles/INDEX.md`, НЕ стоп) → `knowledge/craft.md`
+   → `knowledge/anti-slop-playbook.md` → `knowledge/longread-architecture.md`
+   (архитектура 5-15К знаков: 6 блоков, reset-маркеры, callback) →
+   memory/failures.
 3. Бриф: платформа (Substack / VC / Habr / Teletype / блог), цель (охват / прогрев /
    продажа шага воронки), сегмент осведомлённости (Schwartz, из craft.md §0),
    фактура автора (истории, кейсы, цифры). Личный лонгрид без фактуры автора —
